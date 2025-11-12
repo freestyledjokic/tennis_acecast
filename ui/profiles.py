@@ -22,9 +22,6 @@ def render(model, default_surface='hard'):
     # Check if model is actually loaded (not just a boolean)
     if not model or isinstance(model, bool):
         st.error("❌ Unable to load player data. Please check your data directory.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Get all players from the model
@@ -32,9 +29,6 @@ def render(model, default_surface='hard'):
     
     if not all_players:
         st.warning("No players found in database.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Player search interface
@@ -67,12 +61,7 @@ def render(model, default_surface='hard'):
         </div>
         """, unsafe_allow_html=True)
     
-    # Back button
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("← Back to Home", key="back_home"):
-        st.session_state.page = 'home'
-        st.session_state.selected_player = None
-        st.rerun()
+
 
 
 def _get_all_players(model):
@@ -144,6 +133,8 @@ def _display_player_profile(model, player_name, default_surface):
     with col2:
         if st.button("🔄 Compare with Another Player", width='stretch'):
             st.info("Comparison feature coming soon!")
+    
+
 
 
 def _get_player_stats(model, player_name):

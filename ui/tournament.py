@@ -21,9 +21,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     
     if model is None:
         st.error("❌ Unable to load tournament simulator. Please check your configuration.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Initialize session state
@@ -39,9 +36,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     
     if not all_players:
         st.warning("No players found in database.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Tournament setup
@@ -56,8 +50,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
         key="tournament_surface_select"
     )
     st.session_state.tournament_surface = surface
-    
-
     
     st.markdown("---")
     
@@ -108,6 +100,7 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     with col3:
         if st.button("🗑️ Clear All", width='stretch'):
             st.session_state.tournament_players = []
+            st.session_state.tournament_results = None
             st.rerun()
     
     # Display selected players grid
@@ -128,7 +121,7 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
                  disabled=not can_generate,
                  width='stretch',
                  type="primary"):
-        with st.spinner("Simulating tournament..."):
+        with st.spinner("Running tournament analysis..."):
             st.session_state.tournament_results = _simulate_tournament(
                 model,
                 st.session_state.tournament_players,
@@ -140,13 +133,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     # Display tournament results
     if st.session_state.tournament_results:
         _display_tournament_results(st.session_state.tournament_results, show_context)
-    
-    # Back button
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("← Back to Home", key="back_home"):
-        st.session_state.page = 'home'
-        st.session_state.tournament_results = None
-        st.rerun()
 
 
 def _get_all_players(model):
@@ -195,11 +181,8 @@ def _display_player_grid(players):
 
 
 def _simulate_tournament(model, players, surface, model_id, region):
-    """Simulate tournament bracket"""
+    """Run tournament analysis for bracket"""
     try:
-        # This would call your app.py's simulate_tournament function
-        # For now, simplified simulation
-        
         import random
         
         bracket = _generate_bracket(model, players, surface)
@@ -255,13 +238,16 @@ def _generate_bracket(model, players, surface):
         'champion': None
     }
     
-    # Round 1 (16 -> 8)
+    # Randomize bracket draw - shuffle players for different matchups each time
     current_players = players.copy()
+    random.shuffle(current_players)
+    
+    # Round 1 (16 -> 8)
     for i in range(0, 16, 2):
         match = _simulate_match(current_players[i], current_players[i+1])
         bracket['round1'].append(match)
     
-    # Quarterfinals (8 -> 4)
+    # Quarterfinals (8 -> 4) - winners advance in bracket order
     qf_players = [match['winner'] for match in bracket['round1']]
     for i in range(0, 8, 2):
         match = _simulate_match(qf_players[i], qf_players[i+1])
@@ -381,7 +367,6 @@ Provide comprehensive analysis covering tournament recap, favorites performance,
             return _create_detailed_brief()
             
     except Exception as e:
-        # st.write(f"Debug: Tournament analysis error - {str(e)[:100]}...")  # Debug info (commented out)
         return _create_detailed_brief()
 
 
@@ -408,24 +393,26 @@ def _display_tournament_results(results, show_context):
     </div>
     """, unsafe_allow_html=True)
     
+    # Bracket visualization
+    st.markdown("### 🎯 TOURNAMENT BRACKET")
+    bracket_viz = _generate_bracket_visualization(results['bracket'])
+    st.code(bracket_viz, language=None)
+    
+    # Upset alerts (top 5 only)
+    st.markdown("### 🚨 TOP UPSET ALERTS")
+    upsets = _identify_upsets(results['bracket'])
+    if upsets:
+        for upset in upsets:
+            if upset['risk'] == 'HIGH':
+                st.warning(f"**{upset['round']}**: {upset['match']} - {upset['description']}")
+            elif upset['risk'] == 'MEDIUM':
+                st.info(f"**{upset['round']}**: {upset['match']} - {upset['description']}")
+    else:
+        st.success("No significant upset alerts detected")
+    
     # Title probabilities
     st.markdown("### 📊 TITLE PROBABILITIES")
-    
-    prob_data = []
-    for i, (player, prob) in enumerate(list(results['title_probabilities'].items())[:8], 1):
-        prob_data.append({
-            'Rank': i,
-            'Player': player,
-            'Probability': f"{prob:.1f}%"
-        })
-    
-    import pandas as pd
-    df = pd.DataFrame(prob_data)
-    st.dataframe(df, width='stretch', hide_index=True)
-    
-    # Bracket visualization (simplified)
-    st.markdown("### 🎯 TOURNAMENT BRACKET")
-    st.info("📊 Detailed bracket visualization coming soon!")
+    _display_title_probabilities_chart(results['title_probabilities'], results['champion'])
     
     # AI Analysis
     if results['ai_analysis']:
@@ -447,3 +434,130 @@ def _display_tournament_results(results, show_context):
     with col3:
         if st.button("📥 Export", width='stretch'):
             st.info("Export feature coming soon!")
+
+
+def _generate_bracket_visualization(bracket):
+    """Generate clean tournament bracket visualization"""
+    
+    lines = []
+    lines.append("TOURNAMENT BRACKET")
+    lines.append("=" * 80)
+    lines.append("")
+    
+    # Round 1
+    lines.append("ROUND 1:")
+    for i, match in enumerate(bracket['round1'], 1):
+        winner = "✓" if match['winner'] == match['p1'] else " "
+        loser = " " if match['winner'] == match['p1'] else "✓"
+        prob1 = match['prob'] * 100
+        prob2 = (1 - match['prob']) * 100
+        lines.append(f"  {i:2d}. {winner} {match['p1']:<15} ({prob1:.0f}%) vs {loser} {match['p2']:<15} ({prob2:.0f}%) → {match['winner']}")
+    
+    lines.append("")
+    
+    # Quarterfinals
+    lines.append("QUARTERFINALS:")
+    for i, match in enumerate(bracket['quarterfinals'], 1):
+        winner = "✓" if match['winner'] == match['p1'] else " "
+        loser = " " if match['winner'] == match['p1'] else "✓"
+        prob1 = match['prob'] * 100
+        prob2 = (1 - match['prob']) * 100
+        lines.append(f"  {i:2d}. {winner} {match['p1']:<15} ({prob1:.0f}%) vs {loser} {match['p2']:<15} ({prob2:.0f}%) → {match['winner']}")
+    
+    lines.append("")
+    
+    # Semifinals
+    lines.append("SEMIFINALS:")
+    for i, match in enumerate(bracket['semifinals'], 1):
+        winner = "✓" if match['winner'] == match['p1'] else " "
+        loser = " " if match['winner'] == match['p1'] else "✓"
+        prob1 = match['prob'] * 100
+        prob2 = (1 - match['prob']) * 100
+        lines.append(f"  {i:2d}. {winner} {match['p1']:<15} ({prob1:.0f}%) vs {loser} {match['p2']:<15} ({prob2:.0f}%) → {match['winner']}")
+    
+    lines.append("")
+    
+    # Final
+    if bracket['final']:
+        lines.append("FINAL:")
+        match = bracket['final']
+        winner = "✓" if match['winner'] == match['p1'] else " "
+        loser = " " if match['winner'] == match['p1'] else "✓"
+        prob1 = match['prob'] * 100
+        prob2 = (1 - match['prob']) * 100
+        lines.append(f"     {winner} {match['p1']:<15} ({prob1:.0f}%) vs {loser} {match['p2']:<15} ({prob2:.0f}%) → {match['winner']}")
+    
+    lines.append("")
+    lines.append(f"🏆 CHAMPION: {bracket['champion']}")
+    lines.append("=" * 80)
+    
+    return '\n'.join(lines)
+
+
+def _identify_upsets(bracket):
+    """Identify potential upsets in the bracket"""
+    upsets = []
+    
+    # Check all rounds
+    rounds_data = [
+        ('R1', bracket['round1']),
+        ('R2', bracket['quarterfinals']),
+        ('QF', bracket['semifinals']),
+        ('SF', [bracket['final']] if bracket['final'] else [])
+    ]
+    
+    for round_name, matches in rounds_data:
+        for match in matches:
+            if not match:
+                continue
+            
+            prob1 = match['prob'] * 100
+            prob2 = (1 - match['prob']) * 100
+            
+            # Identify close matches (potential upsets)
+            diff = abs(prob1 - prob2)
+            
+            match_desc = f"{match['p1']} vs {match['p2']} ({prob1:.0f}% vs {prob2:.0f}%)"
+            
+            if diff < 15:  # Within 15% - coin flip
+                upsets.append({
+                    'round': round_name,
+                    'match': match_desc,
+                    'prob1': prob1,
+                    'prob2': prob2,
+                    'risk': 'HIGH',
+                    'description': 'HIGH UPSET POTENTIAL - Virtual coin flip',
+                    'upset_score': diff
+                })
+            elif diff < 25 and min(prob1, prob2) > 30:  # Reasonable upset chance
+                upsets.append({
+                    'round': round_name,
+                    'match': match_desc,
+                    'prob1': prob1,
+                    'prob2': prob2,
+                    'risk': 'MEDIUM',
+                    'description': 'Upset possible - Competitive matchup',
+                    'upset_score': diff
+                })
+    
+    # Sort by upset potential (lower diff = higher potential) and return top 5
+    upsets.sort(key=lambda x: x['upset_score'])
+    return upsets[:5]
+
+
+def _display_title_probabilities_chart(probabilities, champion):
+    """Display visual chart of title probabilities"""
+    import pandas as pd
+    
+    # Show as clean dataframe only
+    chart_data = []
+    for rank, (player, prob) in enumerate(list(probabilities.items())[:10], 1):
+        is_champion = (player == champion)
+        chart_data.append({
+            'Rank': f"{rank}.",
+            'Player': f"{'🏆 ' if is_champion else ''}{player}",
+            'Probability': f"{prob:.1f}%"
+        })
+    
+    df = pd.DataFrame(chart_data)
+    st.dataframe(df, hide_index=True, width='stretch')

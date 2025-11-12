@@ -33,6 +33,17 @@ html, body, .block-container {
   color: var(--text); 
 }
 
+/* Ensure full viewport coverage */
+html, body {
+  min-height: 100vh;
+  background: var(--bg) !important;
+}
+
+.main .block-container {
+  min-height: 100vh;
+  background: var(--bg) !important;
+}
+
 /* HERO SECTION */
 .hero {
   position: relative;
@@ -293,6 +304,23 @@ html, body, .block-container {
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
 
+/* Force background on all containers */
+.stApp {
+  background: var(--bg) !important;
+}
+
+[data-testid="stAppViewContainer"] {
+  background: var(--bg) !important;
+}
+
+[data-testid="stHeader"] {
+  background: transparent !important;
+}
+
+.main {
+  background: var(--bg) !important;
+}
+
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
   .stats-row { grid-template-columns: 1fr; }
@@ -378,14 +406,12 @@ def show_homepage():
     <div class="hero">
       <h1>🎾 AceCast</h1>
       <div class="subtitle">Tennis Match Prediction AI</div>
-      <div class="subtitle">Advanced Elo ratings, Monte Carlo simulations, and AI-powered insights</div>
+      <div class="subtitle">Elo ratings • Match Predictions • Tournament simulations • AI-powered insights</div>
       <div class="badge">Powered by <b>Amazon Bedrock</b></div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Feature Cards - 3 columns
-    st.markdown('<div class="card-grid">', unsafe_allow_html=True)
-    
+    # Feature Cards - 3 columns (no buttons)
     col1, col2, col3 = st.columns(3, gap="large")
     
     with col1:
@@ -398,9 +424,6 @@ def show_homepage():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Explore Players", key="btn_players"):
-            st.session_state.page = 'players'
-            st.rerun()
     
     with col2:
         st.markdown("""
@@ -412,9 +435,6 @@ def show_homepage():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Predict Match", key="btn_predict"):
-            st.session_state.page = 'predict'
-            st.rerun()
     
     with col3:
         st.markdown("""
@@ -422,15 +442,21 @@ def show_homepage():
           <div>
             <div class="feature-icon">🏆</div>
             <h3>Tournament Simulator</h3>
-            <p>Simulate custom 16-player tournaments with Monte Carlo analysis and comprehensive bracket visualization</p>
+            <p>Simulate custom 16-player tournaments with tournament analysis and comprehensive bracket visualization</p>
           </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Simulate Tournament", key="btn_simulate"):
-            st.session_state.page = 'simulate'
-            st.rerun()
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div style='text-align: center; margin-top: 3rem; padding: 2rem; 
+                background: linear-gradient(135deg, #0f1629 0%, #1a2332 100%);
+                border-radius: 12px; border: 1px solid #1a2332;'>
+        <h3 style='color: #00d4ff; margin: 0;'>📍 Use the sidebar to navigate</h3>
+        <p style='color: #94a3b8; margin-top: 1rem;'>
+            Select from Player Profiles, Match Prediction, or Tournament Simulator in the sidebar menu.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # -----------------------------
 # Configuration

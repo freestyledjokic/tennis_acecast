@@ -67,7 +67,7 @@ def build_match_context(model: EloModel, player_a: str, player_b: str, surface: 
 
 
 def simulate_tournament(players: List[str], model: EloModel, surface: str, iterations: int) -> Dict[str, float]:
-    """Run Monte Carlo simulation for tournament."""
+    """Run tournament analysis simulation for tournament."""
     title_counts = {player: 0 for player in players}
     
     for _ in range(iterations):
@@ -195,7 +195,7 @@ def main():
     tournament_parser.add_argument('--csv', required=True, nargs='+', help='CSV file paths')
     tournament_parser.add_argument('--model-id', required=True, help='Bedrock model ID')
     tournament_parser.add_argument('--region', default='us-east-1', help='AWS region')
-    tournament_parser.add_argument('--simulate', type=int, default=0, help='Monte Carlo iterations (0 for quick estimate)')
+    tournament_parser.add_argument('--simulate', type=int, default=0, help='Tournament analysis iterations (0 for quick estimate)')
     tournament_parser.add_argument('--verbose', action='store_true', help='Verbose output')
     
     args = parser.parse_args()

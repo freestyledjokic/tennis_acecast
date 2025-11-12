@@ -21,9 +21,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     
     if model is None:
         st.error("❌ Unable to load prediction model. Please check your configuration.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Initialize session state for match prediction
@@ -41,9 +38,6 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     
     if not all_players:
         st.warning("No players found in database.")
-        if st.button("← Back to Home"):
-            st.session_state.page = 'home'
-            st.rerun()
         return
     
     # Match Setup Interface
@@ -140,12 +134,7 @@ def render(model, default_surface='hard', model_id=None, region=None, show_conte
     if st.session_state.prediction_result:
         _display_prediction_results(st.session_state.prediction_result, show_context)
     
-    # Back button
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("← Back to Home", key="back_home"):
-        st.session_state.page = 'home'
-        st.session_state.prediction_result = None
-        st.rerun()
+
 
 
 def _get_all_players(model):
@@ -351,29 +340,18 @@ def _generate_ai_analysis(prediction_data, model_id, region, show_context):
         sys.path.append('.')
         from app import call_bedrock
         
-        prompt = f"""
-As a tennis expert analyst, provide detailed match insights for:
-
-{prediction_data['player1']} vs {prediction_data['player2']}
-Surface: {prediction_data['surface'].replace('_', ' ').title()}
-Elo: {prediction_data['elo1']:.0f} vs {prediction_data['elo2']:.0f}
-Win Probability: {prediction_data['prob1']*100:.1f}% vs {prediction_data['prob2']*100:.1f}%
-Recent Form: {prediction_data['form1']} vs {prediction_data['form2']}
-H2H: {prediction_data['h2h']['total']}
-
-Provide expert analysis covering match overview, key factors, tactical breakdown, and prediction confidence. Be specific about surface advantages and playing styles.
-        """
+        # Create simplified prompt to avoid validation errors
+        prompt = f"Analyze this tennis match: {prediction_data['player1']} vs {prediction_data['player2']} on {prediction_data['surface'].replace('_', ' ').title()} court. Elo ratings: {prediction_data['elo1']:.0f} vs {prediction_data['elo2']:.0f}. Win probability: {prediction_data['prob1']*100:.1f}% vs {prediction_data['prob2']*100:.1f}%. Provide expert match analysis."
         
-        # Load system prompt
-        system_prompt = "You are a tennis expert analyst. Provide detailed, insightful match analysis."
+        system_prompt = "You are a tennis expert analyst providing match insights."
         response = call_bedrock(system_prompt, prompt, model_id, region)
+        
         if response and len(response.strip()) > 50:
             return response
         else:
             return _create_detailed_analysis()
             
     except Exception as e:
-        st.write(f"Debug: AI analysis error - {str(e)[:100]}...")  # Debug info
         return _create_detailed_analysis()
 
 
@@ -449,6 +427,8 @@ def _display_prediction_results(result, show_context):
     with col3:
         if st.button("📤 Share", width='stretch'):
             st.info("Share feature coming soon!")
+    
+
 
 
 import pandas as pd
