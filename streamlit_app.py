@@ -121,13 +121,14 @@ html, body {
   background: linear-gradient(135deg, #0f1629 0%, #1a2332 100%);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 2rem;
-  height: 280px;
+  padding: 1.5rem;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  word-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .feature-card::before {
@@ -167,18 +168,21 @@ html, body {
 
 .feature-card h3 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text);
   margin-bottom: 0.75rem;
+  word-wrap: break-word;
 }
 
 .feature-card p {
   color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.5;
   margin: 0;
   flex-grow: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* BUTTONS */
@@ -324,6 +328,36 @@ footer { visibility: hidden; }
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
   .stats-row { grid-template-columns: 1fr; }
+  .feature-card {
+    padding: 1.25rem;
+    min-height: 200px;
+  }
+  .feature-card h3 {
+    font-size: 1.1rem;
+  }
+  .feature-card p {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .feature-card {
+    padding: 1rem;
+    min-height: 180px;
+  }
+  .feature-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .feature-card p {
+    font-size: 0.8rem;
+  }
 }
 </style>
 """, unsafe_allow_html=True)
