@@ -3,10 +3,6 @@
 **AI-Powered Tennis Match Prediction & Analysis Platform**
 
 [![Live App](https://img.shields.io/badge/🚀_Live_App-Streamlit-FF4B4B?style=for-the-badge)](https://tennisacecast.streamlit.app/)
-[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![AWS Bedrock](https://img.shields.io/badge/AWS-Bedrock-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)](https://aws.amazon.com/bedrock/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
-
 *Elo ratings • Match Predictions • Tournament simulations • AI-powered insights*
 
 🎯 **[Try It Live](https://tennisacecast.streamlit.app/)**
