@@ -33,7 +33,6 @@ As someone who has **played professional tennis tournaments** (yes, my profile i
 **Fun Fact:** I'm in my own dataset! 🎾
 
 ![My Profile](docs/myprofile.png)
-*Yes, I'm in the dataset! My own profile from professional tournaments*
 ---
 
 ## ✨ Features
@@ -45,13 +44,10 @@ As someone who has **played professional tennis tournaments** (yes, my profile i
 - Recent form tracking
 - Head-to-head records
 
-![Djokovic Profile](docs/djokoprofile1.png)
-*Example: Novak Djokovic's player profile showing Elo ratings across all surfaces*
-
 ![Player Profile Details](docs/djokoprofile2.png)
-*Detailed performance breakdown by surface with win rates and match history*
+*Novak Djokovic'sperformance breakdown by surface with win rates and match history*
 
-
+---
 ### 🎯 Match Prediction
 - AI-powered match analysis
 - Win probability calculations
@@ -62,13 +58,15 @@ As someone who has **played professional tennis tournaments** (yes, my profile i
 ![Match Prediction Setup](docs/nolerafa.png)
 *Match prediction interface for Djokovic vs Nadal on clay*
 
+
 ![Win Probability](docs/nolerafa2.png)
 *Win probability visualization with key statistics comparison*
+
 
 ![AI Analysis](docs/nolerafa3.png)
 *Comprehensive AI-powered match analysis with tactical insights and head-to-head history*
 
-
+---
 ### 🏆 Tournament Simulator
 - Monte Carlo simulations
 - 16-player bracket generation
@@ -79,14 +77,19 @@ As someone who has **played professional tennis tournaments** (yes, my profile i
 ![Tournament Setup](docs/tourney.png)
 *Create custom 16-player tournaments with surface selection*
 
+
 ![Tournament Bracket](docs/tourney1.png)
 *Complete tournament bracket with seeded players*
+
 
 ![Tournament Results](docs/tourney2.png)
 *Championship results with title probabilities*
 
+
 ![AI Tournament Brief](docs/tourney3.png)
 *AI-generated tournament analysis with key storylines and predictions*
+
+---
 ### 📊 Advanced Analytics
 - Multi-surface Elo system
 - Recency-weighted ratings
@@ -178,7 +181,6 @@ tennis_acecast/
 │   └── tournament.py        # Tournament simulation interface
 ├── 📂 data/                  # ATP match data (CSV files)
 ├── 💬 prompts/               # AI system prompts
-├── 📋 requirements.txt       # Python dependencies
 └── 📖 README.md              # This file!
 ```
 
@@ -228,12 +230,6 @@ Powered by **Amazon Bedrock** and **Claude models**:
 - `anthropic.claude-3-sonnet-20240229-v1:0`
 - `anthropic.claude-3-haiku-20240307-v1:0`
 
-### Surface Types
-- `hard` - Hard courts
-- `clay` - Clay courts
-- `grass` - Grass courts
-- `indoor_hard` - Indoor hard courts
-
 ---
 
 ## 📊 Data Format
@@ -273,7 +269,6 @@ Building the **most sophisticated tennis match predictor** by combining:
 - 🧠 **Lifetime Experience Models:** Incorporating decades of tennis knowledge
 - 🌍 **Global Perspective:** Insights from different playing styles and cultures
 - 📊 **Advanced ML Models:** Deep learning for injury risk, fatigue analysis, mental state
-- 🎥 **Video Analysis Integration:** Computer vision for playing style recognition
 - 💬 **Community Predictions:** Crowd-sourced insights from tennis enthusiasts
 
 **Goal:** Create an AI that doesn't just predict tennis—it *understands* tennis the way a lifelong player and coach would.
