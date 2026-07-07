@@ -1,18 +1,40 @@
-import streamlit as st
-import os
-from ui import profiles, match, tournament
+"""AceCast Streamlit web app.
 
-# Page configuration
-st.set_page_config(
-    page_title="AceCast - Tennis Match Prediction AI",
-    page_icon="🎾",
-    layout="wide"
-)
+Entry point for the browser UI: applies the custom "night court" theme,
+loads the Elo model from the bundled CSV data (cached across reruns), and
+routes between the home, player-profile, match-prediction, and tournament
+pages implemented in the ``ui`` package.
+"""
+
+import glob
+from typing import Optional, Tuple
+
+import streamlit as st
+
+from elo_system import EloSystem
+from ui import match, profiles, tournament
+
+# -----------------------------
+# Configuration
+# -----------------------------
+DATA_GLOB = "data/*.csv"
+DEFAULT_SURFACE = "Hard"
+MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+REGION = "us-east-1"
+SHOW_CONTEXT = True
+
+# Sidebar navigation label -> session-state page key.
+NAV_PAGES = {
+    "🏠 Home": "home",
+    "👤 Player Profiles": "players",
+    "⚔️ Match Prediction": "predict",
+    "🏆 Tournament Simulator": "simulate",
+}
 
 # -----------------------------
 # Custom CSS - Night Court / Hardcourt Neon Theme
 # -----------------------------
-st.markdown("""
+CUSTOM_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -28,9 +50,9 @@ st.markdown("""
 }
 
 * { font-family: 'Inter', sans-serif; }
-html, body, .block-container { 
-  background: var(--bg) !important; 
-  color: var(--text); 
+html, body, .block-container {
+  background: var(--bg) !important;
+  color: var(--text);
 }
 
 /* Ensure full viewport coverage */
@@ -68,9 +90,9 @@ html, body {
   pointer-events: none;
 }
 
-.hero h1 { 
-  margin: 0; 
-  font-size: 2.5rem; 
+.hero h1 {
+  margin: 0;
+  font-size: 2.5rem;
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent) 0%, var(--lime) 100%);
   -webkit-background-clip: text;
@@ -78,9 +100,9 @@ html, body {
   background-clip: text;
 }
 
-.hero .subtitle { 
-  color: var(--muted); 
-  margin-top: 0.5rem; 
+.hero .subtitle {
+  color: var(--muted);
+  margin-top: 0.5rem;
   font-size: 1.1rem;
   font-weight: 400;
 }
@@ -360,160 +382,161 @@ footer { visibility: hidden; }
   }
 }
 </style>
-""", unsafe_allow_html=True)
+"""
 
-# -----------------------------
-# Session state
-# -----------------------------
-if 'page' not in st.session_state:
-    st.session_state.page = 'home'
 
-# -----------------------------
-# Model loading
-# -----------------------------
 @st.cache_resource
-def load_elo_model():
+def load_elo_model() -> Tuple[Optional[EloSystem], int]:
+    """Load the Elo model from bundled CSV data (cached across reruns).
+
+    Returns:
+        Tuple of (loaded EloSystem or None on failure, number of CSV files).
+    """
     try:
-        from elo_system import EloSystem
-        import glob
-        
         elo_system = EloSystem()
-        csv_files = glob.glob("data/*.csv")
-        
-        if csv_files:
-            success = elo_system.load_data(csv_files)
-            if success:
-                return elo_system, len(csv_files)
-            else:
-                return None, 0
-        else:
-            return None, 0
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
+        csv_files = glob.glob(DATA_GLOB)
+
+        if csv_files and elo_system.load_data(csv_files):
+            return elo_system, len(csv_files)
+        return None, 0
+    except Exception as exc:
+        st.error(f"Error loading data: {exc}")
         return None, 0
 
-# -----------------------------
-# Sidebar
-# -----------------------------
-with st.sidebar:
-    st.markdown("### 🎾 AceCast")
-    st.markdown("<p style='color: #94a3b8; text-align: center; font-size: 0.85rem;'>Tennis Intelligence Platform</p>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    page = st.radio(
-        "Navigation",
-        ['🏠 Home', '👤 Player Profiles', '⚔️ Match Prediction', '🏆 Tournament Simulator'],
-        key='nav_radio'
+
+def render_sidebar() -> None:
+    """Render the sidebar: branding, navigation radio, and data-load status."""
+    with st.sidebar:
+        st.markdown("### 🎾 AceCast")
+        st.markdown(
+            "<p style='color: #94a3b8; text-align: center; font-size: 0.85rem;'>"
+            "Tennis Intelligence Platform</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("---")
+
+        selected = st.radio("Navigation", list(NAV_PAGES.keys()), key="nav_radio")
+        st.session_state.page = NAV_PAGES[selected]
+
+        st.markdown("---")
+
+        elo_model, file_count = load_elo_model()
+        if elo_model:
+            st.success(f"✅ {file_count} files loaded")
+        else:
+            st.error("❌ Data loading failed")
+
+        st.markdown("---")
+        st.markdown(
+            """
+            <p style='color: #64748b; text-align: center; font-size: 0.75rem;'>
+                Powered by Amazon Bedrock<br>
+                v1.0.0 Beta
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_homepage() -> None:
+    """Render the hero section and feature cards on the landing page."""
+    st.markdown(
+        """
+        <div class="hero">
+          <h1>🎾 AceCast</h1>
+          <div class="subtitle">Tennis Match Prediction AI</div>
+          <div class="subtitle">Elo ratings • Match Predictions • Tournament simulations • AI-powered insights</div>
+          <div class="badge">Powered by <b>Amazon Bedrock</b></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    
-    if page == '🏠 Home':
-        st.session_state.page = 'home'
-    elif page == '👤 Player Profiles':
-        st.session_state.page = 'players'
-    elif page == '⚔️ Match Prediction':
-        st.session_state.page = 'predict'
-    elif page == '🏆 Tournament Simulator':
-        st.session_state.page = 'simulate'
-    
-    st.markdown("---")
-    
-    elo_model, file_count = load_elo_model()
-    if elo_model:
-        st.success(f"✅ {file_count} files loaded")
-    else:
-        st.error("❌ Data loading failed")
-    
-    st.markdown("---")
-    st.markdown("""
-    <p style='color: #64748b; text-align: center; font-size: 0.75rem;'>
-        Powered by Amazon Bedrock<br>
-        v1.0.0 Beta
-    </p>
-    """, unsafe_allow_html=True)
 
-# -----------------------------
-# Homepage
-# -----------------------------
-def show_homepage():
-    # Hero Section
-    st.markdown("""
-    <div class="hero">
-      <h1>🎾 AceCast</h1>
-      <div class="subtitle">Tennis Match Prediction AI</div>
-      <div class="subtitle">Elo ratings • Match Predictions • Tournament simulations • AI-powered insights</div>
-      <div class="badge">Powered by <b>Amazon Bedrock</b></div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Feature Cards - 3 columns (no buttons)
     col1, col2, col3 = st.columns(3, gap="large")
-    
+
     with col1:
-        st.markdown("""
-        <div class="feature-card">
-          <div>
-            <div class="feature-icon">👤</div>
-            <h3>Player Profiles</h3>
-            <p>Explore detailed player statistics, Elo ratings across different surfaces, recent form, and head-to-head records</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(
+            """
+            <div class="feature-card">
+              <div>
+                <div class="feature-icon">👤</div>
+                <h3>Player Profiles</h3>
+                <p>Explore detailed player statistics, Elo ratings across different surfaces, recent form, and head-to-head records</p>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     with col2:
-        st.markdown("""
-        <div class="feature-card">
-          <div>
-            <div class="feature-icon">⚔️</div>
-            <h3>Match Prediction</h3>
-            <p>Predict outcomes between any two players with AI-powered analysis, win probabilities, and tactical insights</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(
+            """
+            <div class="feature-card">
+              <div>
+                <div class="feature-icon">⚔️</div>
+                <h3>Match Prediction</h3>
+                <p>Predict outcomes between any two players with AI-powered analysis, win probabilities, and tactical insights</p>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     with col3:
-        st.markdown("""
-        <div class="feature-card">
-          <div>
-            <div class="feature-icon">🏆</div>
-            <h3>Tournament Simulator</h3>
-            <p>Simulate custom 16-player tournaments with tournament analysis and comprehensive bracket visualization</p>
-          </div>
+        st.markdown(
+            """
+            <div class="feature-card">
+              <div>
+                <div class="feature-icon">🏆</div>
+                <h3>Tournament Simulator</h3>
+                <p>Simulate custom 16-player tournaments with tournament analysis and comprehensive bracket visualization</p>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        """
+        <div style='text-align: center; margin-top: 3rem; padding: 2rem;
+                    background: linear-gradient(135deg, #0f1629 0%, #1a2332 100%);
+                    border-radius: 12px; border: 1px solid #1a2332;'>
+            <h3 style='color: #00d4ff; margin: 0;'>📍 Use the sidebar to navigate</h3>
+            <p style='color: #94a3b8; margin-top: 1rem;'>
+                Select from Player Profiles, Match Prediction, or Tournament Simulator in the sidebar menu.
+            </p>
         </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style='text-align: center; margin-top: 3rem; padding: 2rem; 
-                background: linear-gradient(135deg, #0f1629 0%, #1a2332 100%);
-                border-radius: 12px; border: 1px solid #1a2332;'>
-        <h3 style='color: #00d4ff; margin: 0;'>📍 Use the sidebar to navigate</h3>
-        <p style='color: #94a3b8; margin-top: 1rem;'>
-            Select from Player Profiles, Match Prediction, or Tournament Simulator in the sidebar menu.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-# -----------------------------
-# Configuration
-# -----------------------------
-DEFAULT_SURFACE = "Hard"
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
-REGION = "us-east-1"
-SHOW_CONTEXT = True
 
-# -----------------------------
-# Main
-# -----------------------------
-def main():
+def main() -> None:
+    """Configure the page, render the sidebar, and route to the selected page."""
+    st.set_page_config(
+        page_title="AceCast - Tennis Match Prediction AI",
+        page_icon="🎾",
+        layout="wide",
+    )
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+    if "page" not in st.session_state:
+        st.session_state.page = "home"
+
+    render_sidebar()
+
     elo_model, _ = load_elo_model()
-    
-    if st.session_state.page == 'home':
-        show_homepage()
-    elif st.session_state.page == 'players':
+
+    page = st.session_state.page
+    if page == "home":
+        render_homepage()
+    elif page == "players":
         profiles.render(elo_model, DEFAULT_SURFACE)
-    elif st.session_state.page == 'predict':
+    elif page == "predict":
         match.render(elo_model, DEFAULT_SURFACE, MODEL_ID, REGION, SHOW_CONTEXT)
-    elif st.session_state.page == 'simulate':
+    elif page == "simulate":
         tournament.render(elo_model, DEFAULT_SURFACE, MODEL_ID, REGION, SHOW_CONTEXT)
+
 
 if __name__ == "__main__":
     main()
